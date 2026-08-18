@@ -244,6 +244,18 @@ func (s *Store) UpdateLink(ctx context.Context, code, targetURL, description str
 	return nil
 }
 
+// ExpireLink changes only the lifecycle timestamp and preserves link content.
+func (s *Store) ExpireLink(ctx context.Context, code string, expiresAt int64) error {
+	res, err := s.db.ExecContext(ctx, `UPDATE links SET expires_at = ? WHERE code = ?`, expiresAt, code)
+	if err != nil {
+		return fmt.Errorf("expire link %q: %w", code, err)
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return fmt.Errorf("link %q not found", code)
+	}
+	return nil
+}
+
 // DeleteLink 删除链接及其点击记录。
 func (s *Store) DeleteLink(ctx context.Context, code string) error {
 	tx, err := s.db.BeginTx(ctx, nil)
